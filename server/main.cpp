@@ -1,24 +1,27 @@
+#include <boost/interprocess/ipc/message_queue.hpp>
+#include "../shared/messages.hpp"
 #include <iostream>
-#include <boost/interprocess/managed_shared_memory.hpp>
+
+namespace ipc = boost::interprocess;
 
 int main() {
-    using namespace boost::interprocess;
+    // Wait for connection and messages
+    ipc::message_queue client_queue(ipc::open_or_create, "client_queue", 100, sizeof(Message));
+    ipc::message_queue server_queue(ipc::create_only, "server_queue", 100, sizeof(Message));
 
-    // Create a managed shared memory segment
-    managed_shared_memory segment(create_only, "MySharedMemory", 65536);
+    // Receive a message from the client
+    Message msg_received;
+    unsigned int priority;
+    ipc::message_queue::size_type recvd_size;
 
-    // Allocate a portion of the shared memory
-    const int num_elements = 100;
-    const int element_size = sizeof(int);
-    void* allocated_memory = segment.allocate(num_elements * element_size);
+    client_queue.receive(&msg_received, sizeof(Message), recvd_size, priority);
 
-    // Deallocate the memory
-    segment.deallocate(allocated_memory);
+    // Send a message back to the client
+    Message msg_to_send{2, "Hello, client!"};
+    server_queue.send(&msg_to_send, sizeof(Message), 0);
 
-    // Remove the shared memory segment
-    shared_memory_object::remove("MySharedMemory");
-
-    std::cout << "Boost.Interprocess example completed." << std::endl;
-
+    // Clean up
+    ipc::message_queue::remove("client_queue");
+    ipc::message_queue::remove("server_queue");
     return 0;
 }
