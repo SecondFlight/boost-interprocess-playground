@@ -1,27 +1,41 @@
 #include <boost/interprocess/ipc/message_queue.hpp>
-#include "../shared/messages.hpp"
 #include <iostream>
+#include <vector>
 
-namespace ipc = boost::interprocess;
+using namespace boost::interprocess;
 
-int main() {
-    // Wait for connection and messages
-    ipc::message_queue client_queue(ipc::open_or_create, "client_queue", 100, sizeof(Message));
-    ipc::message_queue server_queue(ipc::create_only, "server_queue", 100, sizeof(Message));
+int main ()
+{
+    try {
+        std::cout << "server: Server start." << std::endl;
 
-    // Receive a message from the client
-    Message msg_received;
-    unsigned int priority;
-    ipc::message_queue::size_type recvd_size;
+        //Open a message queue.
+        message_queue mq(
+            open_only,         // only create
+            "message_queue"    // name
+        );
 
-    client_queue.receive(&msg_received, sizeof(Message), recvd_size, priority);
+        unsigned int priority;
+        message_queue::size_type recvd_size;
 
-    // Send a message back to the client
-    Message msg_to_send{2, "Hello, client!"};
-    server_queue.send(&msg_to_send, sizeof(Message), 0);
+        int counter = 0;
 
-    // Clean up
-    ipc::message_queue::remove("client_queue");
-    ipc::message_queue::remove("server_queue");
+        //Receive 100 numbers
+        for (int i = 0; i < 100; ++i) {
+            int number;
+            mq.receive(&number, sizeof(number), recvd_size, priority);
+            if (number != i || recvd_size != sizeof(number))
+                return 1;
+            counter += number;
+        }
+
+        std::cout << counter << std::endl;
+    }
+    catch(interprocess_exception &ex) {
+        message_queue::remove("message_queue");
+        std::cout << ex.what() << std::endl;
+        return 1;
+    }
+    message_queue::remove("message_queue");
     return 0;
 }

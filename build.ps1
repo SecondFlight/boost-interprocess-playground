@@ -15,6 +15,10 @@ if (![string]::IsNullOrEmpty($BoostRoot)) {
 
 set BOOST_ROOT=$BoostRoot
 
+# Set the script's location as the current directory
+$scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+Push-Location $scriptPath
+
 # Build client
 
 New-Item -ItemType Directory -Path .\client\build -Force
@@ -49,3 +53,5 @@ New-Item -ItemType Directory -Path ./build -Force
 
 Copy-Item -Path $ClientExecutable -Destination ./build
 Copy-Item -Path $ServerExecutable -Destination ./build
+
+Pop-Location
