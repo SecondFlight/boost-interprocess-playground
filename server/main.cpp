@@ -7,12 +7,18 @@ using namespace boost::interprocess;
 int main ()
 {
     try {
-        std::cout << "server: Server start." << std::endl;
+        // Create a message_queue.
+        message_queue mqFromClient(
+            open_only,                 // only create
+            "client-to-server"         // name
+        );
 
-        //Open a message queue.
-        message_queue mq(
-            open_only,         // only create
-            "message_queue"    // name
+        // Open a message_queue.
+        message_queue mqToClient(
+            create_only,               // only create
+            "server-to-client",        // name
+            100,                       // max message number
+            sizeof(int)                // max message size
         );
 
         unsigned int priority;
@@ -20,22 +26,21 @@ int main ()
 
         int counter = 0;
 
-        //Receive 100 numbers
+        // Receive 100 numbers
         for (int i = 0; i < 100; ++i) {
             int number;
-            mq.receive(&number, sizeof(number), recvd_size, priority);
+            mqFromClient.receive(&number, sizeof(number), recvd_size, priority);
             if (number != i || recvd_size != sizeof(number))
                 return 1;
             counter += number;
         }
 
-        std::cout << counter << std::endl;
+        mqToClient.send(&counter, sizeof(counter), 0);
     }
     catch(interprocess_exception &ex) {
-        message_queue::remove("message_queue");
         std::cout << ex.what() << std::endl;
         return 1;
     }
-    message_queue::remove("message_queue");
+
     return 0;
 }

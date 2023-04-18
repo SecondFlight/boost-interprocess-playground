@@ -49,9 +49,9 @@ Pop-Location
 
 # Put client and server executables in the global build/ folder
 
-New-Item -ItemType Directory -Path ./build -Force
+# New-Item -ItemType Directory -Path ./build -Force
 
-Copy-Item -Path $ClientExecutable -Destination ./build
-Copy-Item -Path $ServerExecutable -Destination ./build
+# Copy-Item -Path $ClientExecutable -Destination ./build
+# Copy-Item -Path $ServerExecutable -Destination ./build
 
 Pop-Location
