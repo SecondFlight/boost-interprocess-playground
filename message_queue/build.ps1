@@ -13,8 +13,6 @@ if (![string]::IsNullOrEmpty($BoostRoot)) {
     $env:BOOST_ROOT = $BoostRoot
 }
 
-set BOOST_ROOT=$BoostRoot
-
 # Set the script's location as the current directory
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location $scriptPath

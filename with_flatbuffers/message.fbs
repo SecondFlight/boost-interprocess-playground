@@ -1,0 +1,37 @@
+enum RequestType : short {
+  Add, Subtract
+}
+
+struct Add {
+  a: int;
+  b: int;
+}
+
+struct Subtract {
+  a: int;
+  b: int;
+}
+
+union Command { Add, Subtract }
+
+struct AddReturnValue {
+  value: int;
+}
+
+struct SubtractReturnValue {
+  value: int;
+}
+
+union ReturnValue { AddReturnValue, SubtractReturnValue }
+
+table Request {
+  id: int;
+  requestType: RequestType;
+  command: Command;
+}
+
+table Response {
+  id: int;
+  requestType: RequestType;
+  returnValue: ReturnValue;
+}
