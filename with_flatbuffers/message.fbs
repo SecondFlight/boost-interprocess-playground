@@ -26,12 +26,12 @@ union ReturnValue { AddReturnValue, SubtractReturnValue }
 
 table Request {
   id: int;
-  requestType: RequestType;
+  request_type: RequestType;
   command: Command;
 }
 
 table Response {
   id: int;
-  requestType: RequestType;
-  returnValue: ReturnValue;
+  request_type: RequestType;
+  return_value: ReturnValue;
 }
