@@ -42,6 +42,7 @@ void client()
     std::cout << "Cleanup, just in case" << std::endl;
 
     message_queue::remove("client-to-server");
+    message_queue::remove("server-to-client");
 
     std::cout << "Creating client-to-server message queue" << std::endl;
 
@@ -61,14 +62,26 @@ void client()
     auto mqFromServer = openMessageQueue("server-to-client");
 
     message_queue::remove("client-to-server");
+
+    auto builder = flatbuffers::FlatBufferBuilder();
+
+    auto add = CreateAdd(builder, 3, 4);
+
+    auto command_offset = add.Union();
+
+    int request_id = 1;
+    auto request = CreateRequest(builder, request_id, Command_Add, command_offset);
+
+    builder.Finish(request);
+
+    auto buffer_ptr = builder.GetBufferPointer();
+    auto buffer_size = builder.GetSize();
+
+    mqToServer->send(buffer_ptr, buffer_size, 0);
 }
 
 void server()
 {
-    std::cout << "Cleanup, just in case" << std::endl;
-
-    message_queue::remove("server-to-client");
-
     std::cout << "Creating server-to-client message queue" << std::endl;
 
     // Create a message_queue.
@@ -85,6 +98,36 @@ void server()
 
     std::cout << "Opening client-to-server message queue" << std::endl;
     auto mqFromClient = openMessageQueue("client-to-server");
+
+    uint8_t buffer[65536];
+
+    std::size_t received_size;
+    unsigned int priority;
+
+    mqFromClient->receive(buffer, sizeof(buffer), received_size, priority);
+
+    // Create a const pointer to the start of the buffer
+    const void* buffer_ptr = static_cast<const void*>(buffer);
+
+    // Get the root of the buffer
+    auto request = flatbuffers::GetRoot<Request>(buffer_ptr);
+
+    // Access the data in the buffer
+    int request_id = request->id();
+    auto command_type = request->command_type();
+    switch (command_type) {
+    case Command_Add: {
+        auto add = request->command_as_Add();
+        int a = add->a();
+        int b = add->b();
+        std::cout << "Received Add command: " << a << " + " << b << std::endl;
+        break;
+    }
+    // Handle other commands here
+    default:
+        std::cerr << "Received unknown command" << std::endl;
+        break;
+    }
 }
 
 int main(int argc, char *argv[])

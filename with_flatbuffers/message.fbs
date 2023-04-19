@@ -1,24 +1,20 @@
-enum RequestType : short {
-  Add, Subtract
-}
-
-struct Add {
+table Add {
   a: int;
   b: int;
 }
 
-struct Subtract {
+table Subtract {
   a: int;
   b: int;
 }
 
 union Command { Add, Subtract }
 
-struct AddReturnValue {
+table AddReturnValue {
   value: int;
 }
 
-struct SubtractReturnValue {
+table SubtractReturnValue {
   value: int;
 }
 
@@ -26,12 +22,10 @@ union ReturnValue { AddReturnValue, SubtractReturnValue }
 
 table Request {
   id: int;
-  request_type: RequestType;
   command: Command;
 }
 
 table Response {
   id: int;
-  request_type: RequestType;
   return_value: ReturnValue;
 }
