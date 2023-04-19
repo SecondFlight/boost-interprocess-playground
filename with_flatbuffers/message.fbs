@@ -8,7 +8,9 @@ table Subtract {
   b: int;
 }
 
-union Command { Add, Subtract }
+table Exit {}
+
+union Command { Add, Subtract, Exit }
 
 table AddReturnValue {
   value: int;

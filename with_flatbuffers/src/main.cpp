@@ -37,7 +37,7 @@ std::unique_ptr<message_queue> openMessageQueue(const char *name)
     message_queue::remove("server-to-client");
 }
 
-void client()
+int client()
 {
     std::cout << "Cleanup, just in case" << std::endl;
 
@@ -61,26 +61,101 @@ void client()
     std::cout << "Opening server-to-client message queue" << std::endl;
     auto mqFromServer = openMessageQueue("server-to-client");
 
-    message_queue::remove("client-to-server");
+    // Create a buffer for receiving messages from the server process
+    uint8_t buffer[65536];
 
-    auto builder = flatbuffers::FlatBufferBuilder();
+    int request_id = 0;
 
-    auto add = CreateAdd(builder, 3, 4);
+    while (true) {
+        // Get command string
+        std::cout << "Enter a command (exit, add, subtract): ";
+        std::string command;
+        std::cin >> command;
 
-    auto command_offset = add.Union();
+        // Create flatbuffers builder
+        auto builder = flatbuffers::FlatBufferBuilder();
 
-    int request_id = 1;
-    auto request = CreateRequest(builder, request_id, Command_Add, command_offset);
+        int a, b;
+        Command request_command_type;
+        flatbuffers::Offset<void> command_offset;
 
-    builder.Finish(request);
+        bool exit = false;
+        
+        if (command == "exit") {
+            exit = true;
+            auto exit = CreateExit(builder);
+            command_offset = exit.Union();
+            request_command_type = Command_Exit;
+        } else if (command == "add") {
+            std::cout << "Enter A: ";
+            std::cin >> a;
+            std::cout << "Enter B: ";
+            std::cin >> b;
+            auto add = CreateAdd(builder, a, b);
+            command_offset = add.Union();
+            request_command_type = Command_Add;
+        } else if (command == "subtract") {
+            std::cout << "Enter A: ";
+            std::cin >> a;
+            std::cout << "Enter B: ";
+            std::cin >> b;
+            auto subtract = CreateSubtract(builder, a, b);
+            command_offset = subtract.Union();
+            request_command_type = Command_Subtract;
+        } else {
+            std::cout << "Invalid command. Try again." << std::endl;
+            continue;
+        }
 
-    auto buffer_ptr = builder.GetBufferPointer();
-    auto buffer_size = builder.GetSize();
+        // Create the request object
+        auto request = CreateRequest(builder, request_id, request_command_type, command_offset);
 
-    mqToServer->send(buffer_ptr, buffer_size, 0);
+        builder.Finish(request);
+
+        auto send_buffer_ptr = builder.GetBufferPointer();
+        auto buffer_size = builder.GetSize();
+
+        // Send the request to the server
+        mqToServer->send(send_buffer_ptr, buffer_size, 0);
+
+        // If we want to exit, we don't wait for a response since the server won't send one.
+        if (exit) return 0;
+
+        request_id++;
+
+        std::size_t received_size;
+        unsigned int priority;
+
+        // Get the server's response
+        mqFromServer->receive(buffer, sizeof(buffer), received_size, priority);
+
+        // Create a const pointer to the start of the buffer
+        const void* receive_buffer_ptr = static_cast<const void*>(buffer);
+
+        // Get the root of the buffer
+        auto response = flatbuffers::GetRoot<Response>(receive_buffer_ptr);
+
+        int request_id = response->id();
+        auto response_command_type = response->return_value_type();
+
+        switch (response_command_type) {
+            case ReturnValue_AddReturnValue: {
+                auto return_value = response->return_value_as_AddReturnValue();
+                std::cout << "Got response: " << return_value->value() << std::endl;
+                break;
+            }
+            case ReturnValue_SubtractReturnValue: {
+                auto return_value = response->return_value_as_SubtractReturnValue();
+                std::cout << "Got response: " << return_value->value() << std::endl;
+                break;
+            }
+        }
+    }
+
+    return 0;
 }
 
-void server()
+int server()
 {
     std::cout << "Creating server-to-client message queue" << std::endl;
 
@@ -101,33 +176,72 @@ void server()
 
     uint8_t buffer[65536];
 
-    std::size_t received_size;
-    unsigned int priority;
+    while (true) {
+        std::size_t received_size;
+        unsigned int priority;
 
-    mqFromClient->receive(buffer, sizeof(buffer), received_size, priority);
+        mqFromClient->receive(buffer, sizeof(buffer), received_size, priority);
 
-    // Create a const pointer to the start of the buffer
-    const void* buffer_ptr = static_cast<const void*>(buffer);
+        // Create a const pointer to the start of the buffer
+        const void* send_buffer_ptr = static_cast<const void*>(buffer);
 
-    // Get the root of the buffer
-    auto request = flatbuffers::GetRoot<Request>(buffer_ptr);
+        // Get the root of the buffer
+        auto request = flatbuffers::GetRoot<Request>(send_buffer_ptr);
 
-    // Access the data in the buffer
-    int request_id = request->id();
-    auto command_type = request->command_type();
-    switch (command_type) {
-    case Command_Add: {
-        auto add = request->command_as_Add();
-        int a = add->a();
-        int b = add->b();
-        std::cout << "Received Add command: " << a << " + " << b << std::endl;
-        break;
+        // Create flatbuffers builder
+        auto builder = flatbuffers::FlatBufferBuilder();
+
+        flatbuffers::Offset<void> return_value_offset;
+
+        // Access the data in the buffer
+        int request_id = request->id();
+        auto command_type = request->command_type();
+        int a, b;
+        ReturnValue return_value_type;
+        switch (command_type) {
+            case Command_Add: {
+                auto add = request->command_as_Add();
+                a = add->a();
+                b = add->b();
+                std::cout << "Received Add command: " << a << " + " << b << std::endl;
+                auto add_return_value = CreateAddReturnValue(builder, a + b);
+                return_value_offset = add_return_value.Union();
+                return_value_type = ReturnValue_AddReturnValue;
+                break;
+            }
+            case Command_Subtract: {
+                auto subtract = request->command_as_Subtract();
+                a = subtract->a();
+                b = subtract->b();
+                std::cout << "Received Subtract command: " << a << " - " << b << std::endl;
+                auto subtract_return_value = CreateSubtractReturnValue(builder, a - b);
+                return_value_offset = subtract_return_value.Union();
+                return_value_type = ReturnValue_SubtractReturnValue;
+                break;
+            }
+            case Command_Exit: {
+                return 0;
+            }
+            // Handle other commands here
+            default: {
+                std::cerr << "Received unknown command" << std::endl;
+                break;
+            }
+        }
+
+        // Create the request object
+        auto response = CreateResponse(builder, request_id, return_value_type, return_value_offset);
+
+        builder.Finish(response);
+
+        auto receive_buffer_ptr = builder.GetBufferPointer();
+        auto buffer_size = builder.GetSize();
+
+        // Send the request to the server
+        mqToClient->send(receive_buffer_ptr, buffer_size, 0);
     }
-    // Handle other commands here
-    default:
-        std::cerr << "Received unknown command" << std::endl;
-        break;
-    }
+
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -142,17 +256,15 @@ int main(int argc, char *argv[])
 
     if (argument == "client")
     {
-        client();
+        return client();
     }
     else if (argument == "server")
     {
-        server();
+        return server();
     }
     else
     {
         std::cerr << "Invalid argument: " << argument << std::endl;
         return 1;
     }
-
-    return 0;
 }
