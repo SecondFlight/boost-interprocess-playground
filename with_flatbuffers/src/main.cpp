@@ -1,3 +1,4 @@
+#include <boost/interprocess/ipc/message_queue.hpp>
 #include <iostream>
 #include <string>
 
