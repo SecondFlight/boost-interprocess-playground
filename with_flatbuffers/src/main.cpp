@@ -22,11 +22,10 @@ std::unique_ptr<message_queue> openMessageQueue(const char *name)
                 new message_queue(
                     open_only,
                     name));
-            break;
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
         }
         catch (...)
         {
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
         }
 
         if (count > 100)
@@ -34,11 +33,14 @@ std::unique_ptr<message_queue> openMessageQueue(const char *name)
             throw std::runtime_error("Failed to open message queue.");
         }
     }
+
+    message_queue::remove("server-to-client");
 }
 
 void client()
 {
-    std::cout << "Removing client-to-server message queue" << std::endl;
+    std::cout << "Cleanup, just in case" << std::endl;
+
     message_queue::remove("client-to-server");
 
     std::cout << "Creating client-to-server message queue" << std::endl;
@@ -57,11 +59,14 @@ void client()
 
     std::cout << "Opening server-to-client message queue" << std::endl;
     auto mqFromServer = openMessageQueue("server-to-client");
+
+    message_queue::remove("client-to-server");
 }
 
 void server()
 {
-    std::cout << "Removing server-to-client message queue" << std::endl;
+    std::cout << "Cleanup, just in case" << std::endl;
+
     message_queue::remove("server-to-client");
 
     std::cout << "Creating server-to-client message queue" << std::endl;
