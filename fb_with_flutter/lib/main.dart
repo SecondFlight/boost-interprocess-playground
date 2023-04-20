@@ -1,6 +1,17 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 
+typedef TestFuncCpp = Void Function();
+typedef TestFuncDart = void Function();
+
 void main() {
+  const path = './data/flutter_assets/assets/FlutterEngineConnector.dll';
+  final dylib = DynamicLibrary.open(path);
+
+  final test = dylib.lookupFunction<TestFuncCpp, TestFuncDart>('test');
+  test();
+
   runApp(const MyApp());
 }
 
