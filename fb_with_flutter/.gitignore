@@ -50,3 +50,4 @@ app.*.map.json
 
 # Engine build artifacts
 /assets/*.dll
+/assets/*.exe
