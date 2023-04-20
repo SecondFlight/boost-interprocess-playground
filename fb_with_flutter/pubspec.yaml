@@ -7,6 +7,7 @@ environment:
   sdk: '>=2.19.6 <3.0.0'
 
 dependencies:
+  flat_buffers: ^2.0.5
   flutter:
     sdk: flutter
 
@@ -19,3 +20,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/EngineConnector.dll
+    - assets/Engine.exe

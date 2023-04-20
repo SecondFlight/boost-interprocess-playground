@@ -1,3 +1,6 @@
+# Generate Dart code
+./bindgen.ps1
+
 # Create assets directory if it doesn't exist
 New-Item -ItemType Directory -Path .\assets -Force
 

@@ -51,3 +51,4 @@ app.*.map.json
 # Engine build artifacts
 /assets/*.dll
 /assets/*.exe
+/lib/messages_generated.dart

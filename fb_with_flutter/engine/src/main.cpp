@@ -3,47 +3,18 @@
 #include <iostream>
 
 #include "messages_generated.h"
+#include "../../cpp_shared/create_message_queue.h"
 
 using namespace boost::interprocess;
 
-std::unique_ptr<message_queue> openMessageQueue(const char *name)
-{
-    int count = 0;
-
-    while (true)
-    {
-        count++;
-
-        try
-        {
-            // Open a message_queue.
-            return std::unique_ptr<message_queue>(
-                new message_queue(
-                    open_only,
-                    name));
-        }
-        catch (...)
-        {
-            boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
-        }
-
-        if (count > 100)
-        {
-            throw std::runtime_error("Failed to open message queue.");
-        }
-    }
-
-    message_queue::remove("server-to-client");
-}
-
 int main() {
-    std::cout << "Creating server-to-client message queue" << std::endl;
+    std::cout << "Creating engine-to-ui message queue" << std::endl;
 
     // Create a message_queue.
-    auto mqToClient = std::unique_ptr<message_queue>(
+    auto mqToUi = std::unique_ptr<message_queue>(
         new message_queue(
             create_only,
-            "server-to-client",
+            "engine-to-ui",
 
             // 100 messages can be in the queue at once
             100,
@@ -51,8 +22,8 @@ int main() {
             // Each message can be a maximum of 65536 bytes (?) long
             65536));
 
-    std::cout << "Opening client-to-server message queue" << std::endl;
-    auto mqFromClient = openMessageQueue("client-to-server");
+    std::cout << "Opening ui-to-engine message queue" << std::endl;
+    auto mqFromUi = openMessageQueue("ui-to-engine");
 
     uint8_t buffer[65536];
 
@@ -60,7 +31,7 @@ int main() {
         std::size_t received_size;
         unsigned int priority;
 
-        mqFromClient->receive(buffer, sizeof(buffer), received_size, priority);
+        mqFromUi->receive(buffer, sizeof(buffer), received_size, priority);
 
         // Create a const pointer to the start of the buffer
         const void* send_buffer_ptr = static_cast<const void*>(buffer);
@@ -117,8 +88,8 @@ int main() {
         auto receive_buffer_ptr = builder.GetBufferPointer();
         auto buffer_size = builder.GetSize();
 
-        // Send the request to the server
-        mqToClient->send(receive_buffer_ptr, buffer_size, 0);
+        // Send the request to the engine
+        mqToUi->send(receive_buffer_ptr, buffer_size, 0);
     }
 
     return 0;

@@ -1,16 +1,22 @@
 import 'dart:ffi';
+import 'dart:io';
 
+import 'package:flatbuffers_with_flutter/engine_connector.dart';
 import 'package:flutter/material.dart';
 
-typedef TestFuncCpp = Void Function();
-typedef TestFuncDart = void Function();
+late Process process;
 
-void main() {
-  const path = './data/flutter_assets/assets/FlutterEngineConnector.dll';
-  final dylib = DynamicLibrary.open(path);
+const path = './data/flutter_assets/assets/FlutterEngineConnector.dll';
+final engineConnectorLib = DynamicLibrary.open(path);
 
-  final test = dylib.lookupFunction<TestFuncCpp, TestFuncDart>('test');
-  test();
+void main() async {
+  process = await Process.start('path/to/your/executable.exe', []);
+
+  // final builder = fb.Builder();
+  // final asdf = SubtractObjectBuilder(a: 5, b: 4).finish(builder);
+
+  // final buffer = builder.buffer;
+  // buffer.toPointer();
 
   runApp(const MyApp());
 }
@@ -41,6 +47,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  late EngineConnector engineConnector;
+
+  _MyHomePageState() {
+    engineConnector = EngineConnector(engineConnectorLib);
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -74,5 +85,14 @@ class _MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // TODO: We should send an exit command and attempt to exit gracefully
+
+    process.kill();
+
+    super.dispose();
   }
 }
