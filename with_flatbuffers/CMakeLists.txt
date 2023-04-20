@@ -26,5 +26,4 @@ set(SHARED_MEMORY_DEMO_SOURCES
 # Create the shared_memory_demo executable
 add_executable(shared_memory_demo ${SHARED_MEMORY_DEMO_SOURCES})
 
-include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(shared_memory_demo ${Boost_LIBRARIES})

@@ -4,8 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${default}",
-                "./generated",
-                "./include"
+                "./engine/generated",
+                "./engine/include"
             ],
             "defines": [
                 "_DEBUG",
