@@ -1,3 +1,3 @@
-.\engine\flutter_connector\build.ps1
+.\engine_connector\build.ps1
 New-Item -ItemType Directory -Path .\assets -Force
-Copy-Item -Path ".\engine\flutter_connector\build\Debug\FlutterEngineConnector.dll" -Destination ".\assets\FlutterEngineConnector.dll"
+Copy-Item -Path ".\engine_connector\build\Debug\EngineConnector.dll" -Destination ".\assets\EngineConnector.dll"
