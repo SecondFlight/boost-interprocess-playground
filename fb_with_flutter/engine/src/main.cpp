@@ -24,6 +24,7 @@ int main() {
 
     std::cout << "Opening ui-to-engine message queue" << std::endl;
     auto mqFromUi = openMessageQueue("ui-to-engine");
+    std::cout << "Opened successfully" << std::endl;
 
     uint8_t buffer[65536];
 
@@ -80,7 +81,7 @@ int main() {
             }
         }
 
-        // Create the request object
+        // Create the response object
         auto response = CreateResponse(builder, request_id, return_value_type, return_value_offset);
 
         builder.Finish(response);
@@ -88,7 +89,7 @@ int main() {
         auto receive_buffer_ptr = builder.GetBufferPointer();
         auto buffer_size = builder.GetSize();
 
-        // Send the request to the engine
+        // Send the response to the UI
         mqToUi->send(receive_buffer_ptr, buffer_size, 0);
     }
 

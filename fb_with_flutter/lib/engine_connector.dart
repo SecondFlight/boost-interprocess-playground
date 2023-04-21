@@ -14,19 +14,20 @@ typedef SendFromBufferFuncDart = void Function(int size);
 class EngineConnector {
   DynamicLibrary engineConnectorLib;
 
-  late ConnectFuncDart connect;
-  late GetMessageBufferFuncDart getMessageBuffer;
-  late SendFromBufferFuncDart sendFromBuffer;
+  late ConnectFuncDart _connect;
+  late GetMessageBufferFuncDart _getMessageBuffer;
+  late SendFromBufferFuncDart _sendFromBuffer;
 
   // Buffer for writing messages
-  late Pointer<Uint8> messageBuffer;  
+  late Pointer<Uint8> _messageBuffer;  
 
   EngineConnector(this.engineConnectorLib) {
-    connect = engineConnectorLib.lookupFunction<ConnectFuncNative, ConnectFuncDart>('connect');
-    getMessageBuffer = engineConnectorLib.lookupFunction<GetMessageBufferFuncNative, GetMessageBufferFuncDart>('getMessageBuffer');
-    sendFromBuffer = engineConnectorLib.lookupFunction<SendFromBufferFuncNative, SendFromBufferFuncDart>('sendFromBuffer');
+    _connect = engineConnectorLib.lookupFunction<ConnectFuncNative, ConnectFuncDart>('connect');
+    _getMessageBuffer = engineConnectorLib.lookupFunction<GetMessageBufferFuncNative, GetMessageBufferFuncDart>('getMessageBuffer');
+    _sendFromBuffer = engineConnectorLib.lookupFunction<SendFromBufferFuncNative, SendFromBufferFuncDart>('sendFromBuffer');
 
-    messageBuffer = getMessageBuffer();
+    _connect();
+    _messageBuffer = _getMessageBuffer();
   }
 
   void send(fb.Builder builder) {
@@ -38,10 +39,10 @@ class EngineConnector {
 
     // Copy message to buffer
     for (var i = 0; i < size; i++) {
-      messageBuffer.elementAt(i).value = builder.buffer.elementAt(i);
+      _messageBuffer.elementAt(i).value = builder.buffer.elementAt(i);
     }
 
     // Send the message
-    sendFromBuffer(size);
+    _sendFromBuffer(size);
   }
 }

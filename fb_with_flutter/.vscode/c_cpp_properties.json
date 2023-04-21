@@ -5,7 +5,8 @@
             "includePath": [
                 "${default}",
                 "./engine/generated",
-                "./engine/include"
+                "./engine/include",
+                "./cpp_shared"
             ],
             "defines": [
                 "_DEBUG",

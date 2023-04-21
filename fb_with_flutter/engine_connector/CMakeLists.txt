@@ -10,9 +10,14 @@ find_package(Boost 1.82.0 REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
+# Include the cpp_shared directory
+include_directories(${CMAKE_SOURCE_DIR}/../cpp_shared)
+
 # Set the sources for the EngineConnector executable
 set(ENGINE_CONNECTOR_SOURCES
     src/main.cpp
+    ../cpp_shared/create_message_queue.h
+    ../cpp_shared/create_message_queue.cpp
 )
 
 # Create the EngineConnector shared library (DLL)

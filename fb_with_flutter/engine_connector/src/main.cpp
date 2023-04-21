@@ -1,7 +1,7 @@
 #include <boost/interprocess/ipc/message_queue.hpp>
 #include <iostream>
 
-#include "../../cpp_shared/create_message_queue.h"
+#include "create_message_queue.h"
 
 using namespace boost::interprocess;
 
@@ -41,6 +41,7 @@ extern "C"
 
         std::cout << "Opening engine-to-ui message queue" << std::endl;
         mqFromEngine = openMessageQueue("engine-to-ui");
+        std::cout << "Opened successfully" << std::endl;
     }
 
     __declspec(dllexport) uint8_t* __stdcall getMessageBuffer()

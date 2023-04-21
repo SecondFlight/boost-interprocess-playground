@@ -17,10 +17,15 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 include_directories(${CMAKE_SOURCE_DIR}/generated)
 
+# Include the cpp_shared directory
+include_directories(${CMAKE_SOURCE_DIR}/../cpp_shared)
+
 # Set the sources for the engine_demo executable
 set(ENGINE_DEMO_SOURCES
     src/main.cpp
     generated/messages_generated.h
+    ../cpp_shared/create_message_queue.h
+    ../cpp_shared/create_message_queue.cpp
 )
 
 # Create the engine_demo executable

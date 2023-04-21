@@ -1,16 +1,19 @@
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:flat_buffers/flat_buffers.dart' as fb;
+
 import 'package:flatbuffers_with_flutter/engine_connector.dart';
+import 'package:flatbuffers_with_flutter/messages_generated.dart';
 import 'package:flutter/material.dart';
 
 late Process process;
 
-const path = './data/flutter_assets/assets/FlutterEngineConnector.dll';
+const path = './data/flutter_assets/assets/EngineConnector.dll';
 final engineConnectorLib = DynamicLibrary.open(path);
 
 void main() async {
-  process = await Process.start('path/to/your/executable.exe', []);
+  // process = await Process.start('path/to/your/executable.exe', []);
 
   // final builder = fb.Builder();
   // final asdf = SubtractObjectBuilder(a: 5, b: 4).finish(builder);
@@ -45,18 +48,39 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+int idGen = 0;
+
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   late EngineConnector engineConnector;
+  String selectedOperator = '+';
+  int left = 0;
+  int right = 0;
+  
+  fb.Builder builder = fb.Builder();
 
   _MyHomePageState() {
     engineConnector = EngineConnector(engineConnectorLib);
   }
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  void calculate() {
+    dynamic command;
+    late CommandTypeId type;
+
+    if (selectedOperator == '+') {
+      command = AddObjectBuilder(a: left, b: right);
+      type = CommandTypeId.Add;
+    } else {
+      command = SubtractObjectBuilder(a: left, b: right);
+      type = CommandTypeId.Subtract;
+    }
+
+    final request = RequestObjectBuilder(id: idGen++, command: command, commandType: type);
+
+    request.finish(builder);
+
+    builder.finish(0);
+
+    engineConnector.send(builder);
   }
 
   @override
@@ -69,20 +93,59 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+            SizedBox(
+              height: 50,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: TextField(
+                      onChanged: (text) {
+                        final value = int.tryParse(text);
+                        if (value != null) {
+                          left = value;
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  DropdownMenu(
+                    initialSelection: '+',
+                    onSelected: (item) {
+                      selectedOperator = item!;
+                    },
+                    dropdownMenuEntries: const [
+                      DropdownMenuEntry(value: '+', label: '+'),
+                      DropdownMenuEntry(value: '-', label: '-'),
+                    ],
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 150,
+                    child: TextField(
+                      onChanged: (text) {
+                        final value = int.tryParse(text);
+                        if (value != null) {
+                          right = value;
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const SizedBox(height: 40),
+            MaterialButton(
+              onPressed: calculate,
+              child: const Text(
+                'Calculate',
+                style: TextStyle(fontSize: 20),
+              ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -91,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void dispose() {
     // TODO: We should send an exit command and attempt to exit gracefully
 
-    process.kill();
+    // process.kill();
 
     super.dispose();
   }
