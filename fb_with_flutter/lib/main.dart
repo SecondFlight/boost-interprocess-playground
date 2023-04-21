@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flat_buffers/flat_buffers.dart' as fb;
 
@@ -55,7 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String selectedOperator = '+';
   int left = 0;
   int right = 0;
-  
+
   fb.Builder builder = fb.Builder();
 
   _MyHomePageState() {
@@ -63,24 +64,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void calculate() {
-    dynamic command;
-    late CommandTypeId type;
+    Uint8List request;
 
     if (selectedOperator == '+') {
-      command = AddObjectBuilder(a: left, b: right);
-      type = CommandTypeId.Add;
+      request = RequestObjectBuilder(
+        id: idGen++,
+        commandType: CommandTypeId.Add,
+        command: AddObjectBuilder(a: left, b: right),
+      ).toBytes();
     } else {
-      command = SubtractObjectBuilder(a: left, b: right);
-      type = CommandTypeId.Subtract;
+      request = RequestObjectBuilder(
+        id: idGen++,
+        commandType: CommandTypeId.Subtract,
+        command: SubtractObjectBuilder(a: left, b: right),
+      ).toBytes();
     }
 
-    final request = RequestObjectBuilder(id: idGen++, command: command, commandType: type);
-
-    request.finish(builder);
-
-    builder.finish(0);
-
-    engineConnector.send(builder);
+    engineConnector.send(request);
   }
 
   @override
@@ -141,6 +141,16 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: calculate,
               child: const Text(
                 'Calculate',
+                style: TextStyle(fontSize: 20),
+              ),
+            ),
+            const SizedBox(height: 40),
+            MaterialButton(
+              onPressed: () {
+                engineConnector = EngineConnector(engineConnectorLib);
+              },
+              child: const Text(
+                'Reconnect',
                 style: TextStyle(fontSize: 20),
               ),
             ),

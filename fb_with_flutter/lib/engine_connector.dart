@@ -1,6 +1,5 @@
 import 'dart:ffi';
-
-import 'package:flat_buffers/flat_buffers.dart' as fb;
+import 'dart:typed_data';
 
 typedef ConnectFuncNative = Void Function();
 typedef ConnectFuncDart = void Function();
@@ -30,8 +29,8 @@ class EngineConnector {
     _messageBuffer = _getMessageBuffer();
   }
 
-  void send(fb.Builder builder) {
-    final size = builder.size();
+  void send(Uint8List request) {
+    final size = request.length;
 
     if (size > 65536) {
       throw Exception('Flatbuffers message was too large. We should dynamically reallocate here instead of throwing. This is a bug.');
@@ -39,7 +38,7 @@ class EngineConnector {
 
     // Copy message to buffer
     for (var i = 0; i < size; i++) {
-      _messageBuffer.elementAt(i).value = builder.buffer.elementAt(i);
+      _messageBuffer.elementAt(i).value = request.elementAt(i);
     }
 
     // Send the message

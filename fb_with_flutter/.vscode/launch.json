@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "(Windows) Launch Engine",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/engine/build/Debug/engine_demo.exe",
+      "args": ["client"],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "console": "externalTerminal"
+    }
+  ]
+}
